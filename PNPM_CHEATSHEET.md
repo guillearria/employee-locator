@@ -29,16 +29,72 @@ pnpm outdated
 ### Project-Specific Commands
 ```bash
 # Start the Expo development server
-pnpm expo start
+npx expo start
 
 # Start for Android
-pnpm expo start --android
+npx expo start --android
 
 # Start for iOS
-pnpm expo start --ios
+npx expo start --ios
 
 # Start for web
-pnpm expo start --web
+npx expo start --web
+
+# Build and run native apps
+npx expo run:ios
+npx expo run:android
+
+# Generate native directories
+npx expo prebuild
+
+# Install Expo packages
+npx expo install <package-name>
+
+# Customize project
+npx expo customize
+
+# Configure project
+npx expo config
+```
+
+### Expo Development Server Options
+```bash
+# Start with tunnel for public URL
+npx expo start --tunnel
+
+# Start in offline mode
+npx expo start --offline
+
+# Start with localhost only
+npx expo start --localhost
+
+# Start with custom port
+npx expo start --port 3000
+
+# Start with dev client
+npx expo start --dev-client
+
+# Start with Expo Go
+npx expo start --go
+```
+
+### Expo Terminal UI Shortcuts
+```bash
+# Press these keys in the Expo development server terminal:
+
+A - Open on Android device
+Shift + A - Select Android device/emulator
+I - Open in iOS Simulator
+Shift + I - Select iOS Simulator
+W - Open in web browser
+R - Reload app
+S - Switch between Expo Go and dev client
+M - Open dev menu
+Shift + M - More commands
+J - Open React Native DevTools
+O - Open project in editor
+E - Show QR code
+? - Show all commands
 ```
 
 ## Firebase Commands
@@ -110,10 +166,16 @@ pnpm store prune
 2. **Expo Issues**
 ```bash
 # Clear Expo cache
-expo start -c
+npx expo start -c
 
 # Reset Metro bundler
-pnpm expo start --clear
+npx expo start --clear
+
+# Check Expo CLI version
+npx expo --version
+
+# Get help with Expo commands
+npx expo <command> --help
 ```
 
 3. **Firebase Issues**
@@ -151,4 +213,27 @@ pnpm install --frozen-lockfile
 - [pnpm Documentation](https://pnpm.io/)
 - [Expo Documentation](https://docs.expo.dev/)
 - [Firebase Documentation](https://firebase.google.com/docs)
-- [React Native Documentation](https://reactnative.dev/docs/getting-started) 
+- [React Native Documentation](https://reactnative.dev/docs/getting-started)
+
+## Environment Variables
+
+### Expo-specific Environment Variables
+```bash
+# Disable telemetry
+EXPO_NO_TELEMETRY=1
+
+# Set custom editor
+EXPO_EDITOR=code
+
+# Disable redirect page for dev client
+EXPO_NO_REDIRECT_PAGE=1
+
+# Set public folder for web
+EXPO_PUBLIC_FOLDER=public
+
+# Disable .env file loading
+EXPO_NO_DOTENV=1
+
+# Enable typed routes in Expo Router
+EXPO_USE_TYPED_ROUTES=1
+``` 
