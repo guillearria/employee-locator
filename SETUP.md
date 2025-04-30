@@ -13,9 +13,25 @@ Before you begin, make sure you have the following installed:
 
 2. Add a web app to your Firebase project and copy the Firebase configuration
 
-3. Update the configuration in the following files:
-   - `App.tsx`: Replace the Firebase config object
-   - `app/services/firebaseService.ts`: Replace the Firebase config object
+3. Configure Firebase in your project:
+   - Create or update `app.config.js` in your project root:
+   ```javascript
+   export default {
+     expo: {
+       // ... other Expo config
+       extra: {
+         API_KEY: "your-firebase-api-key",
+         AUTH_DOMAIN: "your-project.firebaseapp.com",
+         PROJECT_ID: "your-project-id",
+         STORAGE_BUCKET: "your-project.appspot.com",
+         MESSAGING_SENDER_ID: "your-messaging-sender-id",
+         APP_ID: "your-app-id"
+       }
+     }
+   };
+   ```
+   - The configuration will be automatically loaded from `app.config.js` into `app/config/firebase.ts`
+   - For development, you can also use `app.config.local.js` (gitignored) to store your local configuration
 
 4. Enable Authentication:
    - Go to the Firebase console → Authentication → Sign-in method
@@ -62,23 +78,20 @@ Before you begin, make sure you have the following installed:
    - Enable Maps SDK for Android
    - Create an API key with appropriate restrictions
 
-2. Add the API key to `app.json`:
-   - Update the `"android" → "config" → "googleMaps" → "apiKey"` field
+2. Add the API key to `app.config.js`:
+   ```javascript
+   export default {
+     expo: {
+       // ... other Expo config
+       extra: {
+         // ... Firebase config
+         GOOGLE_MAPS_API_KEY: "your-google-maps-api-key"
+       }
+     }
+   };
+   ```
 
-## Environment Setup
-
-1. Create a `.env` file in the project root:
-```
-API_KEY=your-firebase-api-key
-AUTH_DOMAIN=your-project.firebaseapp.com
-PROJECT_ID=your-project-id
-STORAGE_BUCKET=your-project.appspot.com
-MESSAGING_SENDER_ID=your-messaging-sender-id
-APP_ID=your-app-id
-GOOGLE_MAPS_API_KEY=your-google-maps-api-key
-```
-
-## Running the App
+## Development Setup
 
 1. Install dependencies:
 ```bash
@@ -89,12 +102,17 @@ npm install
 yarn install
 ```
 
-2. Start the development server:
+2. Configure your development environment:
+   - Copy `app.config.example.js` to `app.config.local.js` (if available)
+   - Update the values in `app.config.local.js` with your Firebase and Google Maps credentials
+   - This file is gitignored, so your credentials won't be committed
+
+3. Start the development server:
 ```bash
-pnpm expo start
+npx expo start
 ```
 
-3. Run on a device or emulator:
+4. Run on a device or emulator:
    - Scan the QR code with the Expo Go app on your device
    - Press 'a' to run on an Android emulator
    - Press 'i' to run on an iOS simulator (macOS only)
@@ -114,4 +132,9 @@ For the best experience testing location tracking:
 - The Firebase service is set up with mock data in `firebaseService.ts`
 - Background location tracking requires special permissions on both iOS and Android
 - To test the manager view with multiple employees, you'll need multiple devices or you can use simulated employees
-- Changes to Firebase rules may take a few minutes to propagate 
+- Changes to Firebase rules may take a few minutes to propagate
+- For production deployment, make sure to:
+  - Use a production Firebase project
+  - Set up proper security rules
+  - Configure environment variables in your deployment platform
+  - Never commit sensitive credentials to version control 
