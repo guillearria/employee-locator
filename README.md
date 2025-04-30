@@ -30,8 +30,8 @@ Kitchen managers on large university campuses need to quickly locate and communi
 ### Prerequisites
 
 - Node.js (v14+)
-- npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
+- pnpm (recommended), npm, or yarn
+- Expo CLI (`pnpm add -g expo-cli`)
 - Firebase account
 
 ### Installation
@@ -44,6 +44,8 @@ cd employee-locator
 
 2. Install dependencies
 ```bash
+pnpm install
+# or
 npm install
 # or
 yarn install
@@ -61,7 +63,7 @@ APP_ID=your-app-id
 
 4. Start the development server
 ```bash
-expo start
+pnpm expo start
 ```
 
 ## App Structure

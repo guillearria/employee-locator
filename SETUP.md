@@ -4,8 +4,8 @@
 
 Before you begin, make sure you have the following installed:
 - Node.js (v14+)
-- npm or yarn
-- Expo CLI: `npm install -g expo-cli`
+- pnpm (recommended), npm, or yarn
+- Expo CLI: `pnpm add -g expo-cli`
 
 ## Firebase Setup
 
@@ -82,6 +82,8 @@ GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 
 1. Install dependencies:
 ```bash
+pnpm install
+# or
 npm install
 # or
 yarn install
@@ -89,7 +91,7 @@ yarn install
 
 2. Start the development server:
 ```bash
-expo start
+pnpm expo start
 ```
 
 3. Run on a device or emulator:
