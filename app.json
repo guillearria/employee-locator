@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "v2",
-    "slug": "v2",
+    "name": "employee-locator",
+    "slug": "employee-locator",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
