@@ -162,3 +162,36 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local configuration files
+app.config.local.js
+app.config.local.json
+
+# Node
+node_modules/
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build
+build/
+*.apk
+*.aab
+*.ipa
