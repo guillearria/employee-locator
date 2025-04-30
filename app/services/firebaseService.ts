@@ -13,7 +13,7 @@ import {
   DataSnapshot,
   update 
 } from 'firebase/database';
-import { auth, database } from '../config/firebase';
+import { auth, database } from '@config/firebase';
 
 // Authentication functions
 export const signIn = (email: string, password: string): Promise<UserCredential> => {

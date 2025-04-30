@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Title, Text } from 'react-native-paper';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { FirebaseError } from '@firebase/util';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -20,8 +21,8 @@ const LoginScreen = () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // The onAuthStateChanged listener in App.js will handle the navigation
-    } catch (error) {
-      const errorMessage = error.message || 'An unknown error occurred';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof FirebaseError ? error.message : 'An unknown error occurred';
       Alert.alert('Login Error', errorMessage);
     } finally {
       setLoading(false);
@@ -46,7 +47,7 @@ const LoginScreen = () => {
     >
       <View style={styles.logoContainer}>
         <Image 
-          source={require('../assets/logo-placeholder.png')} 
+          source={require('@/assets/logo-placeholder.png')} 
           style={styles.logo}
           resizeMode="contain"
         />

@@ -4,10 +4,10 @@ export default {
     slug: "employee-locator",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./app/assets/icon.png",
     userInterfaceStyle: "light",
     splash: {
-      image: "./assets/splash.png",
+      image: "./app/assets/splash.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff"
     },
@@ -16,14 +16,28 @@ export default {
     ],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.yourcompany.employeelocator"
+      bundleIdentifier: "com.yourcompany.employeelocator",
+      infoPlist: {
+        UIBackgroundModes: [
+          "location",
+          "fetch"
+        ],
+        NSLocationWhenInUseUsageDescription: "We need your location to track your position during your work shift.",
+        NSLocationAlwaysAndWhenInUseUsageDescription: "We need to track your location during your work shift, even when the app is in the background.",
+        NSLocationAlwaysUsageDescription: "We need to track your location during your work shift, even when the app is in the background."
+      }
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
+        foregroundImage: "./app/assets/adaptive-icon.png",
         backgroundColor: "#ffffff"
       },
       package: "com.yourcompany.employeelocator",
+      permissions: [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
+      ],
       config: {
         googleMaps: {
           apiKey: "YOUR_GOOGLE_MAPS_API_KEY"
@@ -31,7 +45,7 @@ export default {
       }
     },
     web: {
-      favicon: "./assets/favicon.png"
+      favicon: "./app/assets/favicon.png"
     },
     extra: {
       // Firebase Configuration
@@ -51,19 +65,16 @@ export default {
       // Set to true to enable development features
       EAS_BUILD: process.env.EAS_BUILD,
       
-      // Optional: Add any other environment variables here
-      // For example:
-      // API_URL: "https://api.example.com",
-      // DEBUG_MODE: false
+      // EAS Project ID
+      eas: {
+        projectId: "your-project-id"
+      }
     },
     plugins: [
-      "expo-location",
       [
         "expo-location",
         {
-          locationAlwaysAndWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location.",
-          locationAlwaysPermission: "Allow $(PRODUCT_NAME) to use your location.",
-          locationWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location.",
+          locationAlwaysAndWhenInUsePermission: "Allow Employee Locator to use your location to track your position during your work shift.",
           isAndroidBackgroundLocationEnabled: true
         }
       ]

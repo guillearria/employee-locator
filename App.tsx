@@ -8,13 +8,13 @@ import { ActivityIndicator, View } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
 // Import Firebase configuration
-import { auth } from './app/config/firebase';
+import { auth } from '@config/firebase';
 
 // Import screens
-import LoginScreen from './app/screens/LoginScreen';
-import EmployeeScreen from './app/screens/EmployeeScreen';
-import ManagerScreen from './app/screens/ManagerScreen';
-import RoleSelectionScreen from './app/screens/RoleSelectionScreen';
+import LoginScreen from '@screens/LoginScreen';
+import EmployeeScreen from '@screens/EmployeeScreen';
+import ManagerScreen from '@screens/ManagerScreen';
+import RoleSelectionScreen from '@screens/RoleSelectionScreen';
 
 // Create the stack navigator
 const Stack = createStackNavigator();

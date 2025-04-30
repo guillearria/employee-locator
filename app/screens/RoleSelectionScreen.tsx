@@ -38,7 +38,7 @@ const RoleSelectionScreen = () => {
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <Image
-          source={require('../assets/logo-placeholder.png')}
+          source={require('@/assets/logo-placeholder.png')}
           style={styles.logo}
           resizeMode="contain"
         />
