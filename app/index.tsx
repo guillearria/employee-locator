@@ -22,4 +22,8 @@ const styles = StyleSheet.create({
   text: {
     color: '#fff',
   },
+  link: {
+    color: '#fff',
+    textDecorationLine: 'underline',
+  },
 });
