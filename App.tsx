@@ -5,10 +5,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { ActivityIndicator, View } from 'react-native';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 // Import Firebase configuration
-import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { auth } from './app/config/firebase';
 
 // Import screens
 import LoginScreen from './app/screens/LoginScreen';
@@ -19,24 +19,9 @@ import RoleSelectionScreen from './app/screens/RoleSelectionScreen';
 // Create the stack navigator
 const Stack = createStackNavigator();
 
-// Firebase configuration
-// Replace with your own Firebase config
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Listen for authentication state changes

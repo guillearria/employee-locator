@@ -1,6 +1,4 @@
-import { initializeApp } from 'firebase/app';
 import { 
-  getAuth, 
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut, 
   createUserWithEmailAndPassword,
@@ -8,7 +6,6 @@ import {
   User
 } from 'firebase/auth';
 import { 
-  getDatabase, 
   ref, 
   set, 
   onValue, 
@@ -16,21 +13,7 @@ import {
   DataSnapshot,
   update 
 } from 'firebase/database';
-
-// Replace with your own Firebase config
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const database = getDatabase(app);
+import { auth, database } from '../config/firebase';
 
 // Authentication functions
 export const signIn = (email: string, password: string): Promise<UserCredential> => {
