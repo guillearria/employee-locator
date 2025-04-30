@@ -7,7 +7,8 @@ export default function Index() {
       style={styles.container}
     >
       <Text style={styles.text}>Edit app/index.tsx to edit this screen.</Text>
-      <Link href="/about" style={styles.link}>About</Link>
+      <Link href="/about" style={styles.link}>About Page</Link>
+      <Link href="/broken" style={styles.link}>Broken Link</Link>
     </View>
   );
 }
@@ -23,6 +24,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   link: {
+    fontSize: 20,
     color: '#fff',
     textDecorationLine: 'underline',
   },
