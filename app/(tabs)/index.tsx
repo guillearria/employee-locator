@@ -1,8 +1,8 @@
-import { Text, TextInput, View, StyleSheet, Button } from "react-native";
-import { Link, router } from "expo-router";
+import { Text, TextInput, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
+import { router } from "expo-router";
 import { Image } from "expo-image";
 import { useState } from "react";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebaseConfig";
 
 const placeholderImage = require("../../assets/images/react-logo.png");
@@ -12,51 +12,73 @@ export default function Index() {
   const [password, setPassword] = useState("");
   const [user, setUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLogin, setIsLogin] = useState(true);
 
-  const createEmailUser = () => {
-    createUserWithEmailAndPassword(auth, email, password)
+  const handleAuth = () => {
+    setError(null);
+    const authFunction = isLogin ? signInWithEmailAndPassword : createUserWithEmailAndPassword;
+    
+    authFunction(auth, email, password)
       .then((userCredential) => {
-        // Signed up 
         const user = userCredential.user;
         setUser(user.email);
+        router.replace("/(tabs)");
       })
       .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        setError(`ERROR CODE: ${errorCode}\nERROR MESSAGE: ${errorMessage}`);
+        setError(error.message);
       });
   };
 
   return (
-    <View
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
       <View style={styles.formContainer}>
-        <Text style={styles.text}>Email</Text>
+        <Text style={styles.title}>{isLogin ? "Login" : "Sign Up"}</Text>
+        
+        <Text style={styles.label}>Email</Text>
         <TextInput 
           style={styles.input}
           value={email}
           onChangeText={setEmail}
+          placeholder="Enter your email"
+          placeholderTextColor="#666"
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
-        <Text style={styles.text}>Password</Text>
+        
+        <Text style={styles.label}>Password</Text>
         <TextInput 
           style={styles.input}
           value={password}
           onChangeText={setPassword}
+          placeholder="Enter your password"
+          placeholderTextColor="#666"
+          secureTextEntry
         />
-        <Button title="Sign Up" onPress={() => createEmailUser()} />
-      </View>
-      {user && (
-        <View style={styles.userContainer}>
-          <Text style={styles.userText}>{user}</Text>
-        </View>
-      )}
-      {error && (
-        <View style={styles.errorContainer}>
+
+        {error && (
           <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-    </View>
+        )}
+
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={handleAuth}
+        >
+          <Text style={styles.buttonText}>{isLogin ? "Login" : "Sign Up"}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.switchButton}
+          onPress={() => setIsLogin(!isLogin)}
+        >
+          <Text style={styles.switchText}>
+            {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -64,58 +86,56 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#25292e',
-    alignItems: 'center',
-    // justifyContent: 'center',
-  },
-  text: {
-    color: '#fff',
-    marginBottom: 10,
-  },
-  link: {
-    fontSize: 20,
-    color: '#fff',
-    textDecorationLine: 'underline',
-  },
-  imageContainer: {
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    overflow: "hidden",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  input: {
-    width: "70%",
-    height: 40,
-    backgroundColor: "#fff",
-    marginBottom: 10,
+    justifyContent: 'center',
   },
   formContainer: {
-    width: "70%",
-    height: 40,
-    backgroundColor: "#fff",
-    marginBottom: 10,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
-  errorContainer: {
-    width: "70%",
-    height: 40,
-    backgroundColor: "#fff",
-    marginBottom: 10,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  label: {
+    color: '#fff',
+    marginBottom: 8,
+    fontSize: 16,
+  },
+  input: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  switchButton: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  switchText: {
+    color: '#007AFF',
+    fontSize: 14,
   },
   errorText: {
-    color: "#fff",
+    color: '#ff3b30',
     marginBottom: 10,
+    textAlign: 'center',
   },
-  userContainer: {
-    width: "70%",
-    height: 40,
-    backgroundColor: "#fff",
-    marginBottom: 10,
-  },
-  userText: {
-    color: "#fff",
-    marginBottom: 10,
-  }
 });
