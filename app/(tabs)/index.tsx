@@ -1,10 +1,14 @@
-import { Text, View, StyleSheet } from "react-native";
-import { Link } from "expo-router";
+import { Text, TextInput, View, StyleSheet, Button } from "react-native";
+import { Link, router } from "expo-router";
 import { Image } from "expo-image";
+import { useState } from "react";
 
 const placeholderImage = require("../../assets/images/react-logo.png");
 
 export default function Index() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   return (
     <View
       style={styles.container}
@@ -16,9 +20,22 @@ export default function Index() {
           contentFit="cover"
         />
       </View>
-      <Text style={styles.text}>Edit app/index.tsx to edit this screen.</Text>
-      <Link href="/about" style={styles.link}>About Page</Link>
-      <Link href="/broken" style={styles.link}>Broken Link</Link>
+      <Text style={styles.text}>Email</Text>
+      <TextInput 
+        style={styles.input}
+        placeholder="Email" 
+        value={email}
+        onChangeText={setEmail}
+      />
+      <Text style={styles.text}>Password</Text>
+      <TextInput 
+        style={styles.input}
+        placeholder="Password" 
+        value={password}
+        onChangeText={setPassword}
+      />
+      <Button title="Sign In" onPress={() => {}} />
+      <Link href="/broken" style={styles.link}>Broken Link (FIX)</Link>
     </View>
   );
 }
@@ -29,6 +46,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#25292e',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  text: {
+    color: '#fff',
+    marginBottom: 10,
   },
   link: {
     fontSize: 20,
@@ -44,5 +65,11 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  input: {
+    width: "70%",
+    height: 40,
+    backgroundColor: "#fff",
+    marginBottom: 10,
   },
 });
