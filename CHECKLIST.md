@@ -6,7 +6,7 @@ This checklist is ordered from most important to least important steps in order 
 - [X] **Set up Expo project**
   - Initialize a new Expo project using `npx create-expo-app`.
   - Install core dependencies: `react-native-maps`, `expo-location`, `expo-linking`, and Firebase SDK (`firebase`).
-- [ ] **Configure Firebase project**
+- [X] **Configure Firebase project**
   - Create a Firebase project in the Firebase Console.
   - Enable Authentication (email/password or phone), Firestore, and Cloud Functions.
   - Add your app’s Firebase config to the Expo project.
