@@ -1,11 +1,8 @@
 import { Text, TextInput, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { router } from "expo-router";
-import { Image } from "expo-image";
-import { useState } from "react";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { useState, useEffect } from "react";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../firebaseConfig";
-
-const placeholderImage = require("../../assets/images/react-logo.png");
 
 export default function Index() {
   const [email, setEmail] = useState("");
@@ -13,6 +10,18 @@ export default function Index() {
   const [user, setUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user.email);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleAuth = () => {
     setError(null);
@@ -28,6 +37,32 @@ export default function Index() {
         setError(error.message);
       });
   };
+
+  const handleLogout = () => {
+    signOut(auth)
+      .then(() => {
+        setUser(null);
+      })
+      .catch((error) => {
+        setError(error.message);
+      });
+  };
+
+  if (user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loggedInContainer}>
+          <Text style={styles.welcomeText}>Welcome, {user}</Text>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.buttonText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView 
@@ -94,9 +129,22 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignSelf: 'center',
   },
+  loggedInContainer: {
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  welcomeText: {
+    fontSize: 20,
     color: '#fff',
     marginBottom: 30,
     textAlign: 'center',
@@ -119,6 +167,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
+  },
+  logoutButton: {
+    backgroundColor: '#ff3b30',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
   },
   buttonText: {
     color: '#fff',
