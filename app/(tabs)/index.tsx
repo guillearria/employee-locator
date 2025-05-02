@@ -22,6 +22,19 @@ export default function Index() {
   const [workers, setWorkers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const fetchWorkers = async () => {
+    if (userData?.role === "manager") {
+      try {
+        const workersQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", userData.organizationName)));
+        const workersList = workersQuery.docs.map(doc => doc.data());
+        setWorkers(workersList.filter(worker => worker.role === "worker"));
+      } catch (error) {
+        console.error("Error fetching workers:", error);
+        setError("Error loading workers list. Please try again.");
+      }
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -34,9 +47,7 @@ export default function Index() {
           
           // If user is a manager, fetch their organization's workers
           if (data.role === "manager") {
-            const workersQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", data.organizationName)));
-            const workersList = workersQuery.docs.map(doc => doc.data());
-            setWorkers(workersList.filter(worker => worker.role === "worker"));
+            await fetchWorkers();
           }
         }
       } else {
@@ -161,9 +172,7 @@ export default function Index() {
             
             // If user is a manager, fetch their organization's workers
             if (data.role === "manager") {
-              const workersQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", data.organizationName)));
-              const workersList = workersQuery.docs.map(doc => doc.data());
-              setWorkers(workersList.filter(worker => worker.role === "worker"));
+              await fetchWorkers();
             }
           }
           
@@ -201,7 +210,15 @@ export default function Index() {
           
           {userData.role === "manager" && (
             <View style={styles.workersContainer}>
-              <Text style={styles.workersTitle}>Workers in your organization:</Text>
+              <View style={styles.workersHeader}>
+                <Text style={styles.workersTitle}>Workers in your organization:</Text>
+                <TouchableOpacity 
+                  style={styles.reloadButton}
+                  onPress={fetchWorkers}
+                >
+                  <Text style={styles.reloadButtonText}>Reload</Text>
+                </TouchableOpacity>
+              </View>
               {workers.length > 0 ? (
                 workers.map((worker, index) => (
                   <View key={index} style={styles.workerCard}>
@@ -481,6 +498,12 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 20,
   },
+  workersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   workersTitle: {
     fontSize: 18,
     color: '#fff',
@@ -517,5 +540,16 @@ const styles = StyleSheet.create({
   },
   required: {
     color: '#ff3b30',
+  },
+  reloadButton: {
+    backgroundColor: '#007AFF',
+    padding: 8,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  reloadButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
