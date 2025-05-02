@@ -1,12 +1,17 @@
-import { Text, TextInput, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
+import React from 'react';
+import { Text, TextInput, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
-import { auth } from "../../firebaseConfig";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../firebaseConfig";
 
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [user, setUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(true);
@@ -23,19 +28,50 @@ export default function Index() {
     return () => unsubscribe();
   }, []);
 
-  const handleAuth = () => {
+  const handleAuth = async () => {
     setError(null);
-    const authFunction = isLogin ? signInWithEmailAndPassword : createUserWithEmailAndPassword;
     
-    authFunction(auth, email, password)
-      .then((userCredential) => {
+    if (isLogin) {
+      // Handle login
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          setUser(user.email);
+          router.replace("/(tabs)");
+        })
+        .catch((error) => {
+          setError(error.message);
+        });
+    } else {
+      // Handle signup
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+
+        // Update user profile with display name
+        await updateProfile(user, {
+          displayName: `${firstName} ${lastName}`
+        });
+
+        // Store additional user data in Firestore
+        try {
+          await setDoc(doc(db, "users", user.uid), {
+            firstName,
+            lastName,
+            phoneNumber,
+            email,
+            createdAt: new Date().toISOString()
+          });
+        } catch (error) {
+          console.error("Error creating user:", error);
+        }
+
         setUser(user.email);
         router.replace("/(tabs)");
-      })
-      .catch((error) => {
+      } catch (error: any) {
         setError(error.message);
-      });
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -69,50 +105,89 @@ export default function Index() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>{isLogin ? "Login" : "Sign Up"}</Text>
-        
-        <Text style={styles.label}>Email</Text>
-        <TextInput 
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          placeholderTextColor="#666"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        
-        <Text style={styles.label}>Password</Text>
-        <TextInput 
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          placeholderTextColor="#666"
-          secureTextEntry
-        />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>{isLogin ? "Login" : "Sign Up"}</Text>
+          
+          {!isLogin && (
+            <React.Fragment>
+              <Text style={styles.label}>First Name</Text>
+              <TextInput 
+                style={styles.input}
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="Enter your first name"
+                placeholderTextColor="#666"
+                autoCapitalize="words"
+              />
+              
+              <Text style={styles.label}>Last Name</Text>
+              <TextInput 
+                style={styles.input}
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder="Enter your last name"
+                placeholderTextColor="#666"
+                autoCapitalize="words"
+              />
+              
+              <Text style={styles.label}>Phone Number</Text>
+              <TextInput 
+                style={styles.input}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                placeholder="Enter your phone number"
+                placeholderTextColor="#666"
+                keyboardType="phone-pad"
+              />
+            </React.Fragment>
+          )}
 
-        {error && (
-          <Text style={styles.errorText}>{error}</Text>
-        )}
+          <Text style={styles.label}>Email</Text>
+          <TextInput 
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Enter your email"
+            placeholderTextColor="#666"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          
+          <Text style={styles.label}>Password</Text>
+          <TextInput 
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Enter your password"
+            placeholderTextColor="#666"
+            secureTextEntry
+          />
 
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={handleAuth}
-        >
-          <Text style={styles.buttonText}>{isLogin ? "Login" : "Sign Up"}</Text>
-        </TouchableOpacity>
+          {error && (
+            <Text style={styles.errorText}>{error}</Text>
+          )}
 
-        <TouchableOpacity 
-          style={styles.switchButton}
-          onPress={() => setIsLogin(!isLogin)}
-        >
-          <Text style={styles.switchText}>
-            {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={handleAuth}
+          >
+            <Text style={styles.buttonText}>{isLogin ? "Login" : "Sign Up"}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.switchButton}
+            onPress={() => {
+              setIsLogin(!isLogin);
+              setError(null);
+            }}
+          >
+            <Text style={styles.switchText}>
+              {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -121,6 +196,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#25292e',
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
   },
   formContainer: {
