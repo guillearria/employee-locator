@@ -3,7 +3,7 @@ import { Text, TextInput, View, StyleSheet, TouchableOpacity, KeyboardAvoidingVi
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "firebase/auth";
-import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, setDoc, collection, query, where, getDocs, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
 
 export default function Index() {
@@ -25,9 +25,16 @@ export default function Index() {
   const fetchWorkers = async () => {
     if (userData?.role === "manager") {
       try {
-        const workersQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", userData.organizationName)));
-        const workersList = workersQuery.docs.map(doc => doc.data());
-        setWorkers(workersList.filter(worker => worker.role === "worker"));
+        // Get the organization document using organizationId
+        const orgDoc = await getDoc(doc(db, "organizations", userData.organizationId));
+        if (orgDoc.exists()) {
+          const orgData = orgDoc.data();
+          
+          // Fetch all workers in the organization
+          const workersQuery = await getDocs(query(collection(db, "users"), where("uid", "in", orgData.workerIds)));
+          const workersList = workersQuery.docs.map(doc => doc.data());
+          setWorkers(workersList);
+        }
       } catch (error) {
         console.error("Error fetching workers:", error);
         setError("Error loading workers list. Please try again.");
@@ -118,13 +125,14 @@ export default function Index() {
           return;
         }
 
-        // Check if organization name already exists (only for managers)
+        // Check organization existence and verify password
+        const orgQuery = await getDocs(query(collection(db, "organizations"), where("organizationName", "==", organizationName)));
+        
         if (role === "manager") {
-          const orgQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", organizationName)));
           if (!orgQuery.empty) {
-            // If organization exists, verify the password
-            const orgDoc = orgQuery.docs[0].data();
-            if (orgDoc.organizationPassword !== organizationPassword) {
+            // Organization exists, verify password
+            const orgDoc = orgQuery.docs[0];
+            if (orgDoc.data().organizationPassword !== organizationPassword) {
               setError("Invalid organization password.");
               setIsLoading(false);
               return;
@@ -132,7 +140,6 @@ export default function Index() {
           }
         } else {
           // For workers, verify that the organization exists
-          const orgQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", organizationName)));
           if (orgQuery.empty) {
             setError("Organization not found. Please enter a valid organization name.");
             setIsLoading(false);
@@ -140,6 +147,7 @@ export default function Index() {
           }
         }
 
+        // Create the user first
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
@@ -148,40 +156,73 @@ export default function Index() {
           displayName: `${firstName} ${lastName}`
         });
 
-        // Store additional user data in Firestore
-        try {
-          await setDoc(doc(db, "users", user.uid), {
-            firstName,
-            lastName,
-            phoneNumber,
-            email,
-            role,
-            organizationName,
-            organizationPassword: role === "manager" ? organizationPassword : null,
-            createdAt: new Date().toISOString()
-          });
+        let orgRef;
+        let orgId;
 
-          // After successful signup and Firestore document creation, set the user state
-          setUser(user.email);
-          
-          // Fetch the newly created user data
-          const userDoc = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
-          if (!userDoc.empty) {
-            const data = userDoc.docs[0].data();
-            setUserData(data);
+        if (role === "manager") {
+          if (!orgQuery.empty) {
+            // Use existing organization
+            const orgDoc = orgQuery.docs[0];
+            orgRef = doc(db, "organizations", orgDoc.id);
+            orgId = orgDoc.id;
+            const orgData = orgDoc.data();
             
-            // If user is a manager, fetch their organization's workers
-            if (data.role === "manager") {
-              await fetchWorkers();
-            }
+            // Update managerIds
+            await updateDoc(orgRef, {
+              managerIds: [...orgData.managerIds, user.uid]
+            });
+          } else {
+            // Create new organization
+            orgRef = doc(collection(db, "organizations"));
+            orgId = orgRef.id;
+            await setDoc(orgRef, {
+              organizationName,
+              organizationPassword,
+              managerIds: [user.uid],
+              workerIds: []
+            });
           }
+        } else {
+          // For workers, use existing organization
+          const orgDoc = orgQuery.docs[0];
+          orgRef = doc(db, "organizations", orgDoc.id);
+          orgId = orgDoc.id;
+          const orgData = orgDoc.data();
           
-          // Navigate to the tabs screen
-          router.replace("/(tabs)");
-        } catch (error) {
-          console.error("Error creating user:", error);
-          setError("Error creating user profile. Please try again.");
+          // Update workerIds
+          await updateDoc(orgRef, {
+            workerIds: [...orgData.workerIds, user.uid]
+          });
         }
+
+        // Create user document with organization ID
+        await setDoc(doc(db, "users", user.uid), {
+          firstName,
+          lastName,
+          phoneNumber,
+          email,
+          role,
+          organizationId: orgId,
+          createdAt: new Date().toISOString()
+        });
+
+        // After successful signup and Firestore document creation, set the user state
+        setUser(user.email);
+        
+        // Fetch the newly created user data
+        const userDoc = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
+        if (!userDoc.empty) {
+          const data = userDoc.docs[0].data();
+          setUserData(data);
+          
+          // If user is a manager, fetch their organization's workers
+          if (data.role === "manager") {
+            await fetchWorkers();
+          }
+        }
+        
+        // Navigate to the tabs screen
+        router.replace("/(tabs)");
       } catch (error: any) {
         setError(error.message);
       } finally {
