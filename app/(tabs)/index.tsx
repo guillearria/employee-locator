@@ -3,7 +3,7 @@ import { Text, TextInput, View, StyleSheet, TouchableOpacity, KeyboardAvoidingVi
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
 
 export default function Index() {
@@ -12,17 +12,35 @@ export default function Index() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [role, setRole] = useState<"manager" | "worker">("worker");
   const [user, setUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
+  const [workers, setWorkers] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user.email);
+        // Fetch user data from Firestore
+        const userDoc = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
+        if (!userDoc.empty) {
+          const data = userDoc.docs[0].data();
+          setUserData(data);
+          
+          // If user is a manager, fetch their organization's workers
+          if (data.role === "manager") {
+            const workersQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", data.organizationName)));
+            const workersList = workersQuery.docs.map(doc => doc.data());
+            setWorkers(workersList.filter(worker => worker.role === "worker"));
+          }
+        }
       } else {
         setUser(null);
+        setUserData(null);
+        setWorkers([]);
       }
     });
 
@@ -46,6 +64,22 @@ export default function Index() {
     } else {
       // Handle signup
       try {
+        // Check if organization name already exists (only for managers)
+        if (role === "manager") {
+          const orgQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", organizationName)));
+          if (!orgQuery.empty) {
+            setError("Organization name already exists. Please choose a different name.");
+            return;
+          }
+        } else {
+          // For workers, verify that the organization exists
+          const orgQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", organizationName)));
+          if (orgQuery.empty) {
+            setError("Organization not found. Please enter a valid organization name.");
+            return;
+          }
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
@@ -62,6 +96,7 @@ export default function Index() {
             phoneNumber,
             email,
             role,
+            organizationName,
             createdAt: new Date().toISOString()
           });
         } catch (error) {
@@ -86,11 +121,31 @@ export default function Index() {
       });
   };
 
-  if (user) {
+  if (user && userData) {
     return (
       <View style={styles.container}>
         <View style={styles.loggedInContainer}>
-          <Text style={styles.welcomeText}>Welcome, {user}</Text>
+          <Text style={styles.welcomeText}>Welcome, {userData.firstName} {userData.lastName}</Text>
+          <Text style={styles.organizationText}>Organization: {userData.organizationName}</Text>
+          <Text style={styles.roleText}>Role: {userData.role}</Text>
+          
+          {userData.role === "manager" && (
+            <View style={styles.workersContainer}>
+              <Text style={styles.workersTitle}>Workers in your organization:</Text>
+              {workers.length > 0 ? (
+                workers.map((worker, index) => (
+                  <View key={index} style={styles.workerCard}>
+                    <Text style={styles.workerName}>{worker.firstName} {worker.lastName}</Text>
+                    <Text style={styles.workerEmail}>{worker.email}</Text>
+                    <Text style={styles.workerPhone}>{worker.phoneNumber}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.noWorkersText}>No workers found in your organization</Text>
+              )}
+            </View>
+          )}
+
           <TouchableOpacity 
             style={styles.logoutButton}
             onPress={handleLogout}
@@ -141,6 +196,16 @@ export default function Index() {
                 placeholder="Enter your phone number"
                 placeholderTextColor="#666"
                 keyboardType="phone-pad"
+              />
+
+              <Text style={styles.label}>Organization Name</Text>
+              <TextInput 
+                style={styles.input}
+                value={organizationName}
+                onChangeText={setOrganizationName}
+                placeholder="Enter your organization name"
+                placeholderTextColor="#666"
+                autoCapitalize="words"
               />
 
               <Text style={styles.label}>Role</Text>
@@ -306,11 +371,52 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
   },
   roleText: {
-    color: '#000',
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
   selectedRoleText: {
     color: '#fff',
+  },
+  organizationText: {
+    fontSize: 16,
+    color: '#fff',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  workersContainer: {
+    width: '100%',
+    marginTop: 20,
+  },
+  workersTitle: {
+    fontSize: 18,
+    color: '#fff',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  workerCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  workerName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  workerEmail: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  workerPhone: {
+    fontSize: 14,
+    color: '#666',
+  },
+  noWorkersText: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
