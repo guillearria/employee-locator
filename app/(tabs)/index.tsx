@@ -13,6 +13,7 @@ export default function Index() {
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [organizationName, setOrganizationName] = useState("");
+  const [organizationPassword, setOrganizationPassword] = useState("");
   const [role, setRole] = useState<"manager" | "worker">("worker");
   const [user, setUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +75,13 @@ export default function Index() {
         return;
       }
 
+      // Additional validation for managers
+      if (role === "manager" && !organizationPassword.trim()) {
+        setError("Organization password is required for managers.");
+        setIsLoading(false);
+        return;
+      }
+
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
@@ -103,9 +111,13 @@ export default function Index() {
         if (role === "manager") {
           const orgQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", organizationName)));
           if (!orgQuery.empty) {
-            setError("Organization name already exists. Please choose a different name.");
-            setIsLoading(false);
-            return;
+            // If organization exists, verify the password
+            const orgDoc = orgQuery.docs[0].data();
+            if (orgDoc.organizationPassword !== organizationPassword) {
+              setError("Invalid organization password.");
+              setIsLoading(false);
+              return;
+            }
           }
         } else {
           // For workers, verify that the organization exists
@@ -134,6 +146,7 @@ export default function Index() {
             email,
             role,
             organizationName,
+            organizationPassword: role === "manager" ? organizationPassword : null,
             createdAt: new Date().toISOString()
           });
 
@@ -265,11 +278,28 @@ export default function Index() {
                 autoCapitalize="words"
               />
 
+              {role === "manager" && (
+                <>
+                  <Text style={styles.label}>Organization Password <Text style={styles.required}>*</Text></Text>
+                  <TextInput 
+                    style={styles.input}
+                    value={organizationPassword}
+                    onChangeText={setOrganizationPassword}
+                    placeholder="Enter organization password"
+                    placeholderTextColor="#666"
+                    secureTextEntry
+                  />
+                </>
+              )}
+
               <Text style={styles.label}>Role <Text style={styles.required}>*</Text></Text>
               <View style={styles.roleContainer}>
                 <TouchableOpacity
                   style={[styles.roleButton, role === "worker" && styles.selectedRole]}
-                  onPress={() => setRole("worker")}
+                  onPress={() => {
+                    setRole("worker");
+                    setOrganizationPassword(""); // Clear password when switching to worker
+                  }}
                 >
                   <Text style={[styles.roleText, role === "worker" && styles.selectedRoleText]}>Worker</Text>
                 </TouchableOpacity>
