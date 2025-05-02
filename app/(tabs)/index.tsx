@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextInput, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { Text, TextInput, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "firebase/auth";
@@ -19,6 +19,7 @@ export default function Index() {
   const [isLogin, setIsLogin] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [workers, setWorkers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -49,6 +50,7 @@ export default function Index() {
 
   const handleAuth = async () => {
     setError(null);
+    setIsLoading(true);
     
     if (isLogin) {
       // Handle login
@@ -60,6 +62,9 @@ export default function Index() {
         })
         .catch((error) => {
           setError(error.message);
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
     } else {
       // Handle signup
@@ -69,6 +74,7 @@ export default function Index() {
           const orgQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", organizationName)));
           if (!orgQuery.empty) {
             setError("Organization name already exists. Please choose a different name.");
+            setIsLoading(false);
             return;
           }
         } else {
@@ -76,6 +82,7 @@ export default function Index() {
           const orgQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", organizationName)));
           if (orgQuery.empty) {
             setError("Organization not found. Please enter a valid organization name.");
+            setIsLoading(false);
             return;
           }
         }
@@ -99,14 +106,34 @@ export default function Index() {
             organizationName,
             createdAt: new Date().toISOString()
           });
+
+          // After successful signup and Firestore document creation, set the user state
+          setUser(user.email);
+          
+          // Fetch the newly created user data
+          const userDoc = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
+          if (!userDoc.empty) {
+            const data = userDoc.docs[0].data();
+            setUserData(data);
+            
+            // If user is a manager, fetch their organization's workers
+            if (data.role === "manager") {
+              const workersQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", data.organizationName)));
+              const workersList = workersQuery.docs.map(doc => doc.data());
+              setWorkers(workersList.filter(worker => worker.role === "worker"));
+            }
+          }
+          
+          // Navigate to the tabs screen
+          router.replace("/(tabs)");
         } catch (error) {
           console.error("Error creating user:", error);
+          setError("Error creating user profile. Please try again.");
         }
-
-        setUser(user.email);
-        router.replace("/(tabs)");
       } catch (error: any) {
         setError(error.message);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -252,10 +279,15 @@ export default function Index() {
           )}
 
           <TouchableOpacity 
-            style={styles.button}
+            style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleAuth}
+            disabled={isLoading}
           >
-            <Text style={styles.buttonText}>{isLogin ? "Login" : "Sign Up"}</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>{isLogin ? "Login" : "Sign Up"}</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -264,6 +296,7 @@ export default function Index() {
               setIsLogin(!isLogin);
               setError(null);
             }}
+            disabled={isLoading}
           >
             <Text style={styles.switchText}>
               {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
@@ -371,7 +404,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
   },
   roleText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -418,5 +451,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     marginTop: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });
