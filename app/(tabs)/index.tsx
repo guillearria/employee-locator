@@ -12,6 +12,7 @@ export default function Index() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [role, setRole] = useState<"manager" | "worker">("worker");
   const [user, setUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(true);
@@ -60,6 +61,7 @@ export default function Index() {
             lastName,
             phoneNumber,
             email,
+            role,
             createdAt: new Date().toISOString()
           });
         } catch (error) {
@@ -140,6 +142,22 @@ export default function Index() {
                 placeholderTextColor="#666"
                 keyboardType="phone-pad"
               />
+
+              <Text style={styles.label}>Role</Text>
+              <View style={styles.roleContainer}>
+                <TouchableOpacity
+                  style={[styles.roleButton, role === "worker" && styles.selectedRole]}
+                  onPress={() => setRole("worker")}
+                >
+                  <Text style={[styles.roleText, role === "worker" && styles.selectedRoleText]}>Worker</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.roleButton, role === "manager" && styles.selectedRole]}
+                  onPress={() => setRole("manager")}
+                >
+                  <Text style={[styles.roleText, role === "manager" && styles.selectedRoleText]}>Manager</Text>
+                </TouchableOpacity>
+              </View>
             </React.Fragment>
           )}
 
@@ -270,5 +288,29 @@ const styles = StyleSheet.create({
     color: '#ff3b30',
     marginBottom: 10,
     textAlign: 'center',
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  roleButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  selectedRole: {
+    backgroundColor: '#007AFF',
+  },
+  roleText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  selectedRoleText: {
+    color: '#fff',
   },
 });
