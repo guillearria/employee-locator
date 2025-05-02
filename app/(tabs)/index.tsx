@@ -67,8 +67,38 @@ export default function Index() {
           setIsLoading(false);
         });
     } else {
+      // Validate all required fields
+      if (!firstName.trim() || !lastName.trim() || !phoneNumber.trim() || !organizationName.trim() || !email.trim() || !password.trim()) {
+        setError("All fields are required. Please fill in all the information.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError("Please enter a valid email address.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Validate password length
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        setIsLoading(false);
+        return;
+      }
+
       // Handle signup
       try {
+        // Check if email already exists
+        const emailQuery = await getDocs(query(collection(db, "users"), where("email", "==", email)));
+        if (!emailQuery.empty) {
+          setError("Email already exists. Please use a different email address.");
+          setIsLoading(false);
+          return;
+        }
+
         // Check if organization name already exists (only for managers)
         if (role === "manager") {
           const orgQuery = await getDocs(query(collection(db, "users"), where("organizationName", "==", organizationName)));
@@ -195,7 +225,7 @@ export default function Index() {
           
           {!isLogin && (
             <React.Fragment>
-              <Text style={styles.label}>First Name</Text>
+              <Text style={styles.label}>First Name <Text style={styles.required}>*</Text></Text>
               <TextInput 
                 style={styles.input}
                 value={firstName}
@@ -205,7 +235,7 @@ export default function Index() {
                 autoCapitalize="words"
               />
               
-              <Text style={styles.label}>Last Name</Text>
+              <Text style={styles.label}>Last Name <Text style={styles.required}>*</Text></Text>
               <TextInput 
                 style={styles.input}
                 value={lastName}
@@ -215,7 +245,7 @@ export default function Index() {
                 autoCapitalize="words"
               />
               
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={styles.label}>Phone Number <Text style={styles.required}>*</Text></Text>
               <TextInput 
                 style={styles.input}
                 value={phoneNumber}
@@ -225,7 +255,7 @@ export default function Index() {
                 keyboardType="phone-pad"
               />
 
-              <Text style={styles.label}>Organization Name</Text>
+              <Text style={styles.label}>Organization Name <Text style={styles.required}>*</Text></Text>
               <TextInput 
                 style={styles.input}
                 value={organizationName}
@@ -235,7 +265,7 @@ export default function Index() {
                 autoCapitalize="words"
               />
 
-              <Text style={styles.label}>Role</Text>
+              <Text style={styles.label}>Role <Text style={styles.required}>*</Text></Text>
               <View style={styles.roleContainer}>
                 <TouchableOpacity
                   style={[styles.roleButton, role === "worker" && styles.selectedRole]}
@@ -253,7 +283,7 @@ export default function Index() {
             </React.Fragment>
           )}
 
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>Email <Text style={styles.required}>*</Text></Text>
           <TextInput 
             style={styles.input}
             value={email}
@@ -264,7 +294,7 @@ export default function Index() {
             autoCapitalize="none"
           />
           
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>Password <Text style={styles.required}>*</Text></Text>
           <TextInput 
             style={styles.input}
             value={password}
@@ -454,5 +484,8 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.7,
+  },
+  required: {
+    color: '#ff3b30',
   },
 });
