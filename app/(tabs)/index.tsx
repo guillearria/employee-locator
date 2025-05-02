@@ -12,7 +12,7 @@ export default function Index() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [organizationName, setOrganizationName] = useState("");
+  const [organizationName, setOrganizationName] = useState<string>("");
   const [organizationPassword, setOrganizationPassword] = useState("");
   const [role, setRole] = useState<"manager" | "worker">("worker");
   const [user, setUser] = useState<string | null>(null);
@@ -20,30 +20,45 @@ export default function Index() {
   const [isLogin, setIsLogin] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [workers, setWorkers] = useState<any[]>([]);
+  const [managers, setManagers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchWorkers = async () => {
+  const fetchOrganizationMembers = async () => {
     if (userData?.role === "manager") {
       try {
         // Get the organization document using organizationId
         const orgDoc = await getDoc(doc(db, "organizations", userData.organizationId));
         if (orgDoc.exists()) {
           const orgData = orgDoc.data();
+          setOrganizationName(orgData.organizationName);
           
-          // Check if there are any workers
+          // Fetch all workers in the organization
           if (orgData.workerIds && orgData.workerIds.length > 0) {
-            // Fetch all workers in the organization
-            const workersQuery = await getDocs(query(collection(db, "users"), where("uid", "in", orgData.workerIds)));
-            const workersList = workersQuery.docs.map(doc => doc.data());
+            const workersQuery = await getDocs(query(collection(db, "users"), where("__name__", "in", orgData.workerIds)));
+            const workersList = workersQuery.docs.map(doc => ({
+              ...doc.data(),
+              uid: doc.id
+            }));
             setWorkers(workersList);
           } else {
-            // No workers in the organization
             setWorkers([]);
+          }
+
+          // Fetch all managers in the organization
+          if (orgData.managerIds && orgData.managerIds.length > 0) {
+            const managersQuery = await getDocs(query(collection(db, "users"), where("__name__", "in", orgData.managerIds)));
+            const managersList = managersQuery.docs.map(doc => ({
+              ...doc.data(),
+              uid: doc.id
+            }));
+            setManagers(managersList);
+          } else {
+            setManagers([]);
           }
         }
       } catch (error) {
-        console.error("Error fetching workers:", error);
-        setError("Error loading workers list. Please try again.");
+        console.error("Error fetching organization members:", error);
+        setError("Error loading organization members. Please try again.");
       }
     }
   };
@@ -58,15 +73,17 @@ export default function Index() {
           const data = userDoc.docs[0].data();
           setUserData(data);
           
-          // If user is a manager, fetch their organization's workers
+          // If user is a manager, fetch their organization's members
           if (data.role === "manager") {
-            await fetchWorkers();
+            await fetchOrganizationMembers();
           }
         }
       } else {
         setUser(null);
         setUserData(null);
         setWorkers([]);
+        setManagers([]);
+        setOrganizationName("");
       }
     });
 
@@ -175,7 +192,7 @@ export default function Index() {
             
             // Update managerIds
             await updateDoc(orgRef, {
-              managerIds: [...orgData.managerIds, user.uid]
+              managerIds: [...(orgData.managerIds || []), user.uid]
             });
           } else {
             // Create new organization
@@ -197,7 +214,7 @@ export default function Index() {
           
           // Update workerIds
           await updateDoc(orgRef, {
-            workerIds: [...orgData.workerIds, user.uid]
+            workerIds: [...(orgData.workerIds || []), user.uid]
           });
         }
 
@@ -221,9 +238,9 @@ export default function Index() {
           const data = userDoc.docs[0].data();
           setUserData(data);
           
-          // If user is a manager, fetch their organization's workers
+          // If user is a manager, fetch their organization's members
           if (data.role === "manager") {
-            await fetchWorkers();
+            await fetchOrganizationMembers();
           }
           
           // Navigate to the tabs screen for both managers and workers
@@ -254,31 +271,50 @@ export default function Index() {
       <View style={styles.container}>
         <View style={styles.loggedInContainer}>
           <Text style={styles.welcomeText}>Welcome, {userData.firstName} {userData.lastName}</Text>
-          <Text style={styles.organizationText}>Organization: {userData.organizationName}</Text>
+          <Text style={styles.organizationText}>Organization: {organizationName}</Text>
           <Text style={styles.roleText}>Role: {userData.role}</Text>
           
           {userData.role === "manager" && (
-            <View style={styles.workersContainer}>
-              <View style={styles.workersHeader}>
-                <Text style={styles.workersTitle}>Workers in your organization:</Text>
+            <View style={styles.organizationContainer}>
+              <View style={styles.membersHeader}>
+                <Text style={styles.membersTitle}>Organization Members</Text>
                 <TouchableOpacity 
                   style={styles.reloadButton}
-                  onPress={fetchWorkers}
+                  onPress={fetchOrganizationMembers}
                 >
                   <Text style={styles.reloadButtonText}>Reload</Text>
                 </TouchableOpacity>
               </View>
-              {workers.length > 0 ? (
-                workers.map((worker, index) => (
-                  <View key={index} style={styles.workerCard}>
-                    <Text style={styles.workerName}>{worker.firstName} {worker.lastName}</Text>
-                    <Text style={styles.workerEmail}>{worker.email}</Text>
-                    <Text style={styles.workerPhone}>{worker.phoneNumber}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noWorkersText}>No workers found in your organization</Text>
-              )}
+
+              <View style={styles.membersSection}>
+                <Text style={styles.sectionTitle}>Managers:</Text>
+                {managers.length > 0 ? (
+                  managers.map((manager, index) => (
+                    <View key={index} style={styles.memberCard}>
+                      <Text style={styles.memberName}>{manager.firstName} {manager.lastName}</Text>
+                      <Text style={styles.memberEmail}>{manager.email}</Text>
+                      <Text style={styles.memberPhone}>{manager.phoneNumber}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.noMembersText}>No managers found in your organization</Text>
+                )}
+              </View>
+
+              <View style={styles.membersSection}>
+                <Text style={styles.sectionTitle}>Workers:</Text>
+                {workers.length > 0 ? (
+                  workers.map((worker, index) => (
+                    <View key={index} style={styles.memberCard}>
+                      <Text style={styles.memberName}>{worker.firstName} {worker.lastName}</Text>
+                      <Text style={styles.memberEmail}>{worker.email}</Text>
+                      <Text style={styles.memberPhone}>{worker.phoneNumber}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.noMembersText}>No workers found in your organization</Text>
+                )}
+              </View>
             </View>
           )}
 
@@ -543,43 +579,52 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-  workersContainer: {
+  organizationContainer: {
     width: '100%',
     marginTop: 20,
   },
-  workersHeader: {
+  membersHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
   },
-  workersTitle: {
+  membersTitle: {
     fontSize: 18,
     color: '#fff',
     marginBottom: 10,
     textAlign: 'center',
   },
-  workerCard: {
+  membersSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    color: '#fff',
+    marginBottom: 10,
+    fontWeight: 'bold',
+  },
+  memberCard: {
     backgroundColor: '#fff',
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
   },
-  workerName: {
+  memberName: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  workerEmail: {
+  memberEmail: {
     fontSize: 14,
     color: '#666',
     marginBottom: 5,
   },
-  workerPhone: {
+  memberPhone: {
     fontSize: 14,
     color: '#666',
   },
-  noWorkersText: {
+  noMembersText: {
     color: '#fff',
     textAlign: 'center',
     marginTop: 10,
