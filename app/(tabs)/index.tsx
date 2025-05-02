@@ -271,8 +271,16 @@ export default function Index() {
       <View style={styles.container}>
         <View style={styles.loggedInContainer}>
           <Text style={styles.welcomeText}>Welcome, {userData.firstName} {userData.lastName}</Text>
-          <Text style={styles.organizationText}>Organization: {organizationName}</Text>
-          <Text style={styles.roleText}>Role: {userData.role}</Text>
+          <View style={styles.infoContainer}>
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>Organization</Text>
+              <Text style={styles.infoValue}>{organizationName}</Text>
+            </View>
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>Role</Text>
+              <Text style={[styles.infoValue, styles.roleValue]}>{userData.role}</Text>
+            </View>
+          </View>
           
           {userData.role === "manager" && (
             <View style={styles.organizationContainer}>
@@ -645,5 +653,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 20,
+  },
+  infoCard: {
+    backgroundColor: '#2c2c2e',
+    padding: 15,
+    borderRadius: 12,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  infoLabel: {
+    color: '#8e8e93',
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  infoValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  roleValue: {
+    textTransform: 'capitalize',
   },
 });
