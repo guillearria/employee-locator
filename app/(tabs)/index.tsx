@@ -219,10 +219,12 @@ export default function Index() {
           if (data.role === "manager") {
             await fetchWorkers();
           }
+          
+          // Navigate to the tabs screen for both managers and workers
+          router.replace("/(tabs)");
+        } else {
+          setError("Error fetching user data. Please try logging in.");
         }
-        
-        // Navigate to the tabs screen
-        router.replace("/(tabs)");
       } catch (error: any) {
         setError(error.message);
       } finally {
