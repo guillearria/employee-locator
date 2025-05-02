@@ -1,50 +1,97 @@
-# Welcome to your Expo app 👋
+# Employee Locator
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A real-time location tracking system for organizations to manage and track their employees. This mobile application enables managers to monitor employee locations and maintain efficient communication within their organization.
 
-## Get started
+## Features
 
-1. Install dependencies
+- 🔐 **Role-based Authentication**: Secure login system with manager and worker roles
+- 🏢 **Organization Management**: Create and manage organizations with multiple managers and workers
+- 📍 **Location Tracking**: Real-time location sharing for workers
+- 👥 **Team Management**: Managers can view and manage all organization members
+- 📱 **Cross-platform**: Built with Expo for iOS and Android support
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+- **Frontend**: React Native with Expo
+- **Backend**: Firebase (Authentication, Firestore)
+- **Navigation**: Expo Router
+- **UI Components**: React Native core components with custom styling
 
-   ```bash
-    npx expo start
-   ```
+## Getting Started
 
-In the output, you'll find options to open the app in a
+### Prerequisites
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Node.js (v14+)
+- npm or yarn
+- Expo CLI (`npm install -g expo-cli`)
+- Firebase account
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Installation
 
-## Get a fresh project
-
-When you're ready, run:
-
+1. Clone the repository
 ```bash
-npm run reset-project
+git clone https://github.com/yourusername/employee-locator.git
+cd employee-locator
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Install dependencies
+```bash
+npm install
+```
 
-## Learn more
+3. Configure Firebase
+   - Create a new Firebase project
+   - Enable Authentication (Email/Password)
+   - Set up Firestore Database
+   - Add your Firebase configuration to the project
 
-To learn more about developing your project with Expo, look at the following resources:
+4. Start the development server
+```bash
+npx expo start
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## App Structure
 
-## Join the community
+### Authentication
+- Email/password authentication
+- Role selection (Manager/Worker)
+- Organization-based access control
 
-Join our community of developers creating universal apps.
+### Manager Features
+- View organization members
+- Monitor worker locations
+- Manage organization settings
+- Access to all organization data
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Worker Features
+- Check-in/out functionality
+- Location sharing during active shifts
+- View personal information
+- Access to organization details
+
+## Security & Privacy
+
+- Role-based access control
+- Organization-level data isolation
+- Secure authentication
+- Location sharing only during active shifts
+
+## Development
+
+The project uses Expo's file-based routing system. Main components are located in the `app` directory:
+
+- `(tabs)`: Main application screens
+- `firebaseConfig.ts`: Firebase configuration
+- Components and utilities are organized in their respective directories
+
+## Future Enhancements
+
+- Real-time location tracking
+- Push notifications
+- Geofencing capabilities
+- Advanced analytics
+- Web dashboard for managers
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
