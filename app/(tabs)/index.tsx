@@ -30,10 +30,16 @@ export default function Index() {
         if (orgDoc.exists()) {
           const orgData = orgDoc.data();
           
-          // Fetch all workers in the organization
-          const workersQuery = await getDocs(query(collection(db, "users"), where("uid", "in", orgData.workerIds)));
-          const workersList = workersQuery.docs.map(doc => doc.data());
-          setWorkers(workersList);
+          // Check if there are any workers
+          if (orgData.workerIds && orgData.workerIds.length > 0) {
+            // Fetch all workers in the organization
+            const workersQuery = await getDocs(query(collection(db, "users"), where("uid", "in", orgData.workerIds)));
+            const workersList = workersQuery.docs.map(doc => doc.data());
+            setWorkers(workersList);
+          } else {
+            // No workers in the organization
+            setWorkers([]);
+          }
         }
       } catch (error) {
         console.error("Error fetching workers:", error);
