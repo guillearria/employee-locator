@@ -28,7 +28,7 @@ The Employee Locator is a real-time location tracking system with the following 
 
 ### Phase 1: Project Setup and Authentication
 1. **Firebase Integration**
-   - [ ] Set up Firebase configuration
+   - [X] Set up Firebase configuration
    - [ ] Implement authentication system
    - [ ] Create Firestore schema for users and organizations
 
