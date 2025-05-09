@@ -1,39 +1,58 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import RegistrationForm from "./../components/RegistrationForm";
 
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
 
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Login</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        {isLogin ? (
+          <>
+            <Text style={styles.title}>Login</Text>
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
 
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Create Account</Text>
-        </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.switchButton}
+              onPress={() => setIsLogin(false)}
+            >
+              <Text style={styles.switchButtonText}>Create Account</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <RegistrationForm />
+            <TouchableOpacity 
+              style={styles.switchButton}
+              onPress={() => setIsLogin(true)}
+            >
+              <Text style={styles.switchButtonText}>Back to Login</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </View>
   );
@@ -86,5 +105,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
+  },
+  switchButton: {
+    padding: 10,
+  },
+  switchButtonText: {
+    color: "#007AFF",
+    textAlign: "center",
+    fontSize: 16,
   },
 });
