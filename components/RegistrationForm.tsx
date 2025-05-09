@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type RegistrationFormData = {
@@ -43,6 +43,7 @@ export default function RegistrationForm() {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#9CA3AF"
         value={formData.email}
         onChangeText={(value) => handleInputChange('email', value)}
         autoCapitalize="none"
@@ -52,6 +53,7 @@ export default function RegistrationForm() {
       <TextInput
         style={styles.input}
         placeholder="First Name"
+        placeholderTextColor="#9CA3AF"
         value={formData.firstName}
         onChangeText={(value) => handleInputChange('firstName', value)}
       />
@@ -59,6 +61,7 @@ export default function RegistrationForm() {
       <TextInput
         style={styles.input}
         placeholder="Last Name"
+        placeholderTextColor="#9CA3AF"
         value={formData.lastName}
         onChangeText={(value) => handleInputChange('lastName', value)}
       />
@@ -66,6 +69,7 @@ export default function RegistrationForm() {
       <TextInput
         style={styles.input}
         placeholder="Job Title"
+        placeholderTextColor="#9CA3AF"
         value={formData.jobTitle}
         onChangeText={(value) => handleInputChange('jobTitle', value)}
       />
@@ -73,6 +77,7 @@ export default function RegistrationForm() {
       <TextInput
         style={styles.input}
         placeholder="Phone Number"
+        placeholderTextColor="#9CA3AF"
         value={formData.phoneNumber}
         onChangeText={(value) => handleInputChange('phoneNumber', value)}
         keyboardType="phone-pad"
@@ -125,15 +130,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#FFFFFF',
   },
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#4B5563',
     borderRadius: 8,
     marginBottom: 15,
     paddingHorizontal: 15,
     fontSize: 16,
+    backgroundColor: '#1F2937',
+    color: '#FFFFFF',
   },
   roleContainer: {
     marginBottom: 20,
@@ -141,6 +149,7 @@ const styles = StyleSheet.create({
   roleLabel: {
     fontSize: 16,
     marginBottom: 10,
+    color: '#FFFFFF',
   },
   roleButtons: {
     flexDirection: 'row',
@@ -150,30 +159,31 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#60A5FA',
     marginHorizontal: 5,
     borderRadius: 8,
     alignItems: 'center',
+    backgroundColor: '#1F2937',
   },
   roleButtonActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#2563EB',
   },
   roleButtonText: {
-    color: '#007AFF',
+    color: '#60A5FA',
     fontSize: 16,
     fontWeight: '600',
   },
   roleButtonTextActive: {
-    color: 'white',
+    color: '#FFFFFF',
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#2563EB',
     padding: 15,
     borderRadius: 8,
     marginTop: 10,
   },
   buttonText: {
-    color: 'white',
+    color: '#FFFFFF',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',

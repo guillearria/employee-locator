@@ -16,6 +16,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#9CA3AF"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -25,6 +26,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor="#9CA3AF"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -50,24 +52,27 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
+    color: "#FFFFFF",
   },
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#4B5563",
     borderRadius: 8,
     marginBottom: 15,
     paddingHorizontal: 15,
     fontSize: 16,
+    backgroundColor: "#1F2937",
+    color: "#FFFFFF",
   },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#2563EB",
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
   },
   buttonText: {
-    color: "white",
+    color: "#FFFFFF",
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
@@ -76,7 +81,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   switchButtonText: {
-    color: "#007AFF",
+    color: "#60A5FA",
     textAlign: "center",
     fontSize: 16,
   },
