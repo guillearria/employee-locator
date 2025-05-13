@@ -5,6 +5,7 @@ import { db } from '../firebaseConfig';
 
 type RegistrationFormData = {
   email: string;
+  password: string;
   firstName: string;
   lastName: string;
   jobTitle: string;
@@ -14,9 +15,13 @@ type RegistrationFormData = {
   organizationPassword?: string;
 };
 
+type RegistrationStep = 'credentials' | 'organization' | 'details';
+
 export default function RegistrationForm() {
+  const [currentStep, setCurrentStep] = useState<RegistrationStep>('credentials');
   const [formData, setFormData] = useState<RegistrationFormData>({
     email: '',
+    password: '',
     firstName: '',
     lastName: '',
     jobTitle: '',
@@ -44,6 +49,26 @@ export default function RegistrationForm() {
       organizationPassword: role === 'worker' ? undefined : prev.organizationPassword
     }));
     setError(null);
+  };
+
+  const validateCredentials = () => {
+    if (!formData.email || !formData.password) {
+      setError('Email and password are required');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return false;
+    }
+
+    return true;
   };
 
   const validateOrganization = async () => {
@@ -77,35 +102,43 @@ export default function RegistrationForm() {
     }
   };
 
-  const handleSubmit = async () => {
+  const validateDetails = () => {
+    if (!formData.firstName || !formData.lastName || !formData.jobTitle || !formData.phoneNumber) {
+      setError('All fields are required');
+      return false;
+    }
+    return true;
+  };
+
+  const handleNext = async () => {
     setError(null);
+    
+    switch (currentStep) {
+      case 'credentials':
+        if (validateCredentials()) {
+          setCurrentStep('organization');
+        }
+        break;
+      case 'organization':
+        const isOrgValid = await validateOrganization();
+        if (isOrgValid) {
+          setCurrentStep('details');
+        }
+        break;
+      case 'details':
+        if (validateDetails()) {
+          handleSubmit();
+        }
+        break;
+    }
+  };
+
+  const handleSubmit = async () => {
     setIsLoading(true);
-
     try {
-      // Validate all required fields
-      if (!formData.email || !formData.firstName || !formData.lastName || 
-          !formData.jobTitle || !formData.phoneNumber || !formData.organizationName) {
-        setError('All fields are required');
-        return;
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        setError('Please enter a valid email address');
-        return;
-      }
-
-      // Validate organization
-      const isOrgValid = await validateOrganization();
-      if (!isOrgValid) {
-        return;
-      }
-
       // TODO: Implement the actual registration logic here
       // This would involve creating the user in Firebase Auth
       // and storing the user data in Firestore
-
     } catch (err) {
       setError('An error occurred during registration. Please try again.');
     } finally {
@@ -113,10 +146,25 @@ export default function RegistrationForm() {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-      
+  const renderStepIndicator = () => (
+    <View style={styles.stepIndicator}>
+      {(['credentials', 'organization', 'details'] as RegistrationStep[]).map((step, index) => (
+        <React.Fragment key={step}>
+          <View style={[
+            styles.stepDot,
+            currentStep === step && styles.stepDotActive
+          ]} />
+          {index < 2 && <View style={[
+            styles.stepLine,
+            currentStep === step && styles.stepLineActive
+          ]} />}
+        </React.Fragment>
+      ))}
+    </View>
+  );
+
+  const renderCredentialsStep = () => (
+    <>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -127,6 +175,73 @@ export default function RegistrationForm() {
         keyboardType="email-address"
       />
 
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        placeholderTextColor="#9CA3AF"
+        value={formData.password}
+        onChangeText={(value) => handleInputChange('password', value)}
+        secureTextEntry
+      />
+    </>
+  );
+
+  const renderOrganizationStep = () => (
+    <>
+      <View style={styles.roleContainer}>
+        <Text style={styles.roleLabel}>What is your role?</Text>
+        <View style={styles.roleButtons}>
+          <TouchableOpacity
+            style={[
+              styles.roleButton,
+              formData.role === 'manager' && styles.roleButtonActive
+            ]}
+            onPress={() => handleRoleChange('manager')}
+          >
+            <Text style={[
+              styles.roleButtonText,
+              formData.role === 'manager' && styles.roleButtonTextActive
+            ]}>Manager</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.roleButton,
+              formData.role === 'worker' && styles.roleButtonActive
+            ]}
+            onPress={() => handleRoleChange('worker')}
+          >
+            <Text style={[
+              styles.roleButtonText,
+              formData.role === 'worker' && styles.roleButtonTextActive
+            ]}>Worker</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Organization Name"
+        placeholderTextColor="#9CA3AF"
+        value={formData.organizationName}
+        onChangeText={(value) => handleInputChange('organizationName', value)}
+        autoCapitalize="words"
+      />
+
+      {formData.role === 'manager' && (
+        <TextInput
+          style={styles.input}
+          placeholder="Organization Password (if joining existing)"
+          placeholderTextColor="#9CA3AF"
+          value={formData.organizationPassword}
+          onChangeText={(value) => handleInputChange('organizationPassword', value)}
+          secureTextEntry
+        />
+      )}
+    </>
+  );
+
+  const renderDetailsStep = () => (
+    <>
       <TextInput
         style={styles.input}
         placeholder="First Name"
@@ -159,68 +274,32 @@ export default function RegistrationForm() {
         onChangeText={(value) => handleInputChange('phoneNumber', value)}
         keyboardType="phone-pad"
       />
+    </>
+  );
 
-      <TextInput
-        style={styles.input}
-        placeholder="Organization Name"
-        placeholderTextColor="#9CA3AF"
-        value={formData.organizationName}
-        onChangeText={(value) => handleInputChange('organizationName', value)}
-        autoCapitalize="words"
-      />
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Create Account</Text>
+      
+      {renderStepIndicator()}
 
-      {formData.role === 'manager' && (
-        <TextInput
-          style={styles.input}
-          placeholder="Organization Password (if joining existing)"
-          placeholderTextColor="#9CA3AF"
-          value={formData.organizationPassword}
-          onChangeText={(value) => handleInputChange('organizationPassword', value)}
-          secureTextEntry
-        />
-      )}
-
-      <View style={styles.roleContainer}>
-        <Text style={styles.roleLabel}>Role:</Text>
-        <View style={styles.roleButtons}>
-          <TouchableOpacity
-            style={[
-              styles.roleButton,
-              formData.role === 'manager' && styles.roleButtonActive
-            ]}
-            onPress={() => handleRoleChange('manager')}
-          >
-            <Text style={[
-              styles.roleButtonText,
-              formData.role === 'manager' && styles.roleButtonTextActive
-            ]}>Manager</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.roleButton,
-              formData.role === 'worker' && styles.roleButtonActive
-            ]}
-            onPress={() => handleRoleChange('worker')}
-          >
-            <Text style={[
-              styles.roleButtonText,
-              formData.role === 'worker' && styles.roleButtonTextActive
-            ]}>Worker</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {currentStep === 'credentials' && renderCredentialsStep()}
+      {currentStep === 'organization' && renderOrganizationStep()}
+      {currentStep === 'details' && renderDetailsStep()}
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       <TouchableOpacity 
-        style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleSubmit}
+        style={[styles.button, (isLoading || isValidatingOrg) && styles.buttonDisabled]}
+        onPress={handleNext}
         disabled={isLoading || isValidatingOrg}
       >
         {isLoading || isValidatingOrg ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.buttonText}>Register</Text>
+          <Text style={styles.buttonText}>
+            {currentStep === 'details' ? 'Complete Registration' : 'Next'}
+          </Text>
         )}
       </TouchableOpacity>
     </View>
@@ -238,6 +317,30 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
     color: '#FFFFFF',
+  },
+  stepIndicator: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  stepDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#4B5563',
+  },
+  stepDotActive: {
+    backgroundColor: '#60A5FA',
+  },
+  stepLine: {
+    width: 40,
+    height: 2,
+    backgroundColor: '#4B5563',
+    marginHorizontal: 4,
+  },
+  stepLineActive: {
+    backgroundColor: '#60A5FA',
   },
   input: {
     height: 50,
