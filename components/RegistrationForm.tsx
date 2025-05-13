@@ -25,11 +25,33 @@ export default function RegistrationForm() {
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof RegistrationFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'phoneNumber') {
+      // Remove any non-digit characters
+      const numbersOnly = value.replace(/\D/g, '');
+      // Limit to 10 digits
+      if (numbersOnly.length <= 10) {
+        setFormData(prev => ({
+          ...prev,
+          [field]: numbersOnly
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
     setError(null);
+  };
+
+  const formatPhoneNumber = (phoneNumber: string) => {
+    if (!phoneNumber) return '';
+    const cleaned = phoneNumber.replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return '(' + match[1] + ') ' + match[2] + '-' + match[3];
+    }
+    return phoneNumber;
   };
 
   const validateForm = () => {
@@ -46,6 +68,11 @@ export default function RegistrationForm() {
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
+      return false;
+    }
+
+    if (formData.phoneNumber.length !== 10) {
+      setError('Please enter a valid 10-digit phone number');
       return false;
     }
 
@@ -95,49 +122,70 @@ export default function RegistrationForm() {
     <View style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
       
-      <TextInput
-        style={styles.input}
-        placeholder="First Name"
-        placeholderTextColor="#9CA3AF"
-        value={formData.firstName}
-        onChangeText={(value) => handleInputChange('firstName', value)}
-      />
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>First Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="John"
+          placeholderTextColor="#9CA3AF"
+          value={formData.firstName}
+          onChangeText={(value) => handleInputChange('firstName', value)}
+          autoCapitalize="words"
+        />
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Last Name"
-        placeholderTextColor="#9CA3AF"
-        value={formData.lastName}
-        onChangeText={(value) => handleInputChange('lastName', value)}
-      />
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Last Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Doe"
+          placeholderTextColor="#9CA3AF"
+          value={formData.lastName}
+          onChangeText={(value) => handleInputChange('lastName', value)}
+          autoCapitalize="words"
+        />
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#9CA3AF"
-        value={formData.email}
-        onChangeText={(value) => handleInputChange('email', value)}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Email Address</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="john@example.com"
+          placeholderTextColor="#9CA3AF"
+          value={formData.email}
+          onChangeText={(value) => handleInputChange('email', value)}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          autoComplete="email"
+        />
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#9CA3AF"
-        value={formData.password}
-        onChangeText={(value) => handleInputChange('password', value)}
-        secureTextEntry
-      />
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Phone Number</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="3051234567"
+          placeholderTextColor="#9CA3AF"
+          value={formatPhoneNumber(formData.phoneNumber)}
+          onChangeText={(value) => handleInputChange('phoneNumber', value)}
+          keyboardType="phone-pad"
+          autoComplete="tel"
+          maxLength={14} // (XXX) XXX-XXXX format
+        />
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Phone Number"
-        placeholderTextColor="#9CA3AF"
-        value={formData.phoneNumber}
-        onChangeText={(value) => handleInputChange('phoneNumber', value)}
-        keyboardType="phone-pad"
-      />
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="At least 6 characters"
+          placeholderTextColor="#9CA3AF"
+          value={formData.password}
+          onChangeText={(value) => handleInputChange('password', value)}
+          secureTextEntry
+          autoComplete="password-new"
+        />
+      </View>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -164,8 +212,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 24,
     textAlign: 'center',
+    color: '#FFFFFF',
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
     color: '#FFFFFF',
   },
   input: {
@@ -173,7 +230,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#4B5563',
     borderRadius: 8,
-    marginBottom: 15,
     paddingHorizontal: 15,
     fontSize: 16,
     backgroundColor: '#1F2937',
