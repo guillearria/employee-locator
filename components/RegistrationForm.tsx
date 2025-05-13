@@ -1,38 +1,28 @@
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { db } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
 
 type RegistrationFormData = {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-  jobTitle: string;
   phoneNumber: string;
-  role: 'manager' | 'worker';
-  organizationName: string;
-  organizationPassword?: string;
 };
 
-type RegistrationStep = 'credentials' | 'organization' | 'details';
-
 export default function RegistrationForm() {
-  const [currentStep, setCurrentStep] = useState<RegistrationStep>('credentials');
   const [formData, setFormData] = useState<RegistrationFormData>({
     email: '',
     password: '',
     firstName: '',
     lastName: '',
-    jobTitle: '',
     phoneNumber: '',
-    role: 'worker',
-    organizationName: '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isValidatingOrg, setIsValidatingOrg] = useState(false);
 
   const handleInputChange = (field: keyof RegistrationFormData, value: string) => {
     setFormData(prev => ({
@@ -42,18 +32,9 @@ export default function RegistrationForm() {
     setError(null);
   };
 
-  const handleRoleChange = (role: 'manager' | 'worker') => {
-    setFormData(prev => ({
-      ...prev,
-      role,
-      organizationPassword: role === 'worker' ? undefined : prev.organizationPassword
-    }));
-    setError(null);
-  };
-
-  const validateCredentials = () => {
-    if (!formData.email || !formData.password) {
-      setError('Email and password are required');
+  const validateForm = () => {
+    if (!formData.email || !formData.password || !formData.firstName || !formData.lastName || !formData.phoneNumber) {
+      setError('All fields are required');
       return false;
     }
 
@@ -71,177 +52,49 @@ export default function RegistrationForm() {
     return true;
   };
 
-  const validateOrganization = async () => {
-    if (!formData.organizationName.trim()) {
-      setError('Organization name is required');
-      return false;
-    }
-
-    setIsValidatingOrg(true);
-    try {
-      const orgQuery = await getDocs(query(collection(db, "organizations"), where("organizationName", "==", formData.organizationName)));
-      
-      if (formData.role === 'worker') {
-        if (orgQuery.empty) {
-          setError('Organization not found. Please enter a valid organization name.');
-          return false;
-        }
-      } else {
-        // For managers, we allow creating new organizations
-        if (!orgQuery.empty && !formData.organizationPassword) {
-          setError('This organization already exists. Please enter the organization password.');
-          return false;
-        }
-      }
-      return true;
-    } catch (err) {
-      setError('Error validating organization. Please try again.');
-      return false;
-    } finally {
-      setIsValidatingOrg(false);
-    }
-  };
-
-  const validateDetails = () => {
-    if (!formData.firstName || !formData.lastName || !formData.jobTitle || !formData.phoneNumber) {
-      setError('All fields are required');
-      return false;
-    }
-    return true;
-  };
-
-  const handleNext = async () => {
-    setError(null);
-    
-    switch (currentStep) {
-      case 'credentials':
-        if (validateCredentials()) {
-          setCurrentStep('organization');
-        }
-        break;
-      case 'organization':
-        const isOrgValid = await validateOrganization();
-        if (isOrgValid) {
-          setCurrentStep('details');
-        }
-        break;
-      case 'details':
-        if (validateDetails()) {
-          handleSubmit();
-        }
-        break;
-    }
-  };
-
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
     setIsLoading(true);
     try {
-      // TODO: Implement the actual registration logic here
-      // This would involve creating the user in Firebase Auth
-      // and storing the user data in Firestore
+      // Check if email already exists
+      const emailQuery = await getDocs(query(collection(db, "users"), where("email", "==", formData.email)));
+      if (!emailQuery.empty) {
+        throw new Error('Email already exists. Please use a different email address.');
+      }
+
+      // Create the user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      // Update user profile with display name
+      await updateProfile(user, {
+        displayName: `${formData.firstName} ${formData.lastName}`
+      });
+
+      // Create user document
+      await setDoc(doc(db, "users", user.uid), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        organizations: [], // Empty array to be populated when user joins organizations
+        createdAt: new Date().toISOString()
+      });
+
+      // Registration successful
+      setError(null);
     } catch (err) {
-      setError('An error occurred during registration. Please try again.');
+      setError(err instanceof Error ? err.message : 'An error occurred during registration. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const renderStepIndicator = () => (
-    <View style={styles.stepIndicator}>
-      {(['credentials', 'organization', 'details'] as RegistrationStep[]).map((step, index) => (
-        <React.Fragment key={step}>
-          <View style={[
-            styles.stepDot,
-            currentStep === step && styles.stepDotActive
-          ]} />
-          {index < 2 && <View style={[
-            styles.stepLine,
-            currentStep === step && styles.stepLineActive
-          ]} />}
-        </React.Fragment>
-      ))}
-    </View>
-  );
-
-  const renderCredentialsStep = () => (
-    <>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#9CA3AF"
-        value={formData.email}
-        onChangeText={(value) => handleInputChange('email', value)}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#9CA3AF"
-        value={formData.password}
-        onChangeText={(value) => handleInputChange('password', value)}
-        secureTextEntry
-      />
-    </>
-  );
-
-  const renderOrganizationStep = () => (
-    <>
-      <View style={styles.roleContainer}>
-        <Text style={styles.roleLabel}>What is your role?</Text>
-        <View style={styles.roleButtons}>
-          <TouchableOpacity
-            style={[
-              styles.roleButton,
-              formData.role === 'manager' && styles.roleButtonActive
-            ]}
-            onPress={() => handleRoleChange('manager')}
-          >
-            <Text style={[
-              styles.roleButtonText,
-              formData.role === 'manager' && styles.roleButtonTextActive
-            ]}>Manager</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.roleButton,
-              formData.role === 'worker' && styles.roleButtonActive
-            ]}
-            onPress={() => handleRoleChange('worker')}
-          >
-            <Text style={[
-              styles.roleButtonText,
-              formData.role === 'worker' && styles.roleButtonTextActive
-            ]}>Worker</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Organization Name"
-        placeholderTextColor="#9CA3AF"
-        value={formData.organizationName}
-        onChangeText={(value) => handleInputChange('organizationName', value)}
-        autoCapitalize="words"
-      />
-
-      {formData.role === 'manager' && (
-        <TextInput
-          style={styles.input}
-          placeholder="Organization Password (if joining existing)"
-          placeholderTextColor="#9CA3AF"
-          value={formData.organizationPassword}
-          onChangeText={(value) => handleInputChange('organizationPassword', value)}
-          secureTextEntry
-        />
-      )}
-    </>
-  );
-
-  const renderDetailsStep = () => (
-    <>
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Create Account</Text>
+      
       <TextInput
         style={styles.input}
         placeholder="First Name"
@@ -260,10 +113,21 @@ export default function RegistrationForm() {
 
       <TextInput
         style={styles.input}
-        placeholder="Job Title"
+        placeholder="Email"
         placeholderTextColor="#9CA3AF"
-        value={formData.jobTitle}
-        onChangeText={(value) => handleInputChange('jobTitle', value)}
+        value={formData.email}
+        onChangeText={(value) => handleInputChange('email', value)}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        placeholderTextColor="#9CA3AF"
+        value={formData.password}
+        onChangeText={(value) => handleInputChange('password', value)}
+        secureTextEntry
       />
 
       <TextInput
@@ -274,32 +138,18 @@ export default function RegistrationForm() {
         onChangeText={(value) => handleInputChange('phoneNumber', value)}
         keyboardType="phone-pad"
       />
-    </>
-  );
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-      
-      {renderStepIndicator()}
-
-      {currentStep === 'credentials' && renderCredentialsStep()}
-      {currentStep === 'organization' && renderOrganizationStep()}
-      {currentStep === 'details' && renderDetailsStep()}
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       <TouchableOpacity 
-        style={[styles.button, (isLoading || isValidatingOrg) && styles.buttonDisabled]}
-        onPress={handleNext}
-        disabled={isLoading || isValidatingOrg}
+        style={[styles.button, isLoading && styles.buttonDisabled]}
+        onPress={handleSubmit}
+        disabled={isLoading}
       >
-        {isLoading || isValidatingOrg ? (
+        {isLoading ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.buttonText}>
-            {currentStep === 'details' ? 'Complete Registration' : 'Next'}
-          </Text>
+          <Text style={styles.buttonText}>Create Account</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -318,30 +168,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#FFFFFF',
   },
-  stepIndicator: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  stepDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#4B5563',
-  },
-  stepDotActive: {
-    backgroundColor: '#60A5FA',
-  },
-  stepLine: {
-    width: 40,
-    height: 2,
-    backgroundColor: '#4B5563',
-    marginHorizontal: 4,
-  },
-  stepLineActive: {
-    backgroundColor: '#60A5FA',
-  },
   input: {
     height: 50,
     borderWidth: 1,
@@ -351,39 +177,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     fontSize: 16,
     backgroundColor: '#1F2937',
-    color: '#FFFFFF',
-  },
-  roleContainer: {
-    marginBottom: 20,
-  },
-  roleLabel: {
-    fontSize: 16,
-    marginBottom: 10,
-    color: '#FFFFFF',
-  },
-  roleButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  roleButton: {
-    flex: 1,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: '#60A5FA',
-    marginHorizontal: 5,
-    borderRadius: 8,
-    alignItems: 'center',
-    backgroundColor: '#1F2937',
-  },
-  roleButtonActive: {
-    backgroundColor: '#2563EB',
-  },
-  roleButtonText: {
-    color: '#60A5FA',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  roleButtonTextActive: {
     color: '#FFFFFF',
   },
   button: {
