@@ -138,7 +138,7 @@ export default function RegistrationForm() {
         <Text style={styles.label}>Last Name</Text>
         <TextInput
           style={styles.input}
-          placeholder="Doe"
+          placeholder="Smith"
           placeholderTextColor="#9CA3AF"
           value={formData.lastName}
           onChangeText={(value) => handleInputChange('lastName', value)}
@@ -150,7 +150,7 @@ export default function RegistrationForm() {
         <Text style={styles.label}>Email Address</Text>
         <TextInput
           style={styles.input}
-          placeholder="john@example.com"
+          placeholder="john.smith@example.com"
           placeholderTextColor="#9CA3AF"
           value={formData.email}
           onChangeText={(value) => handleInputChange('email', value)}
@@ -164,7 +164,7 @@ export default function RegistrationForm() {
         <Text style={styles.label}>Phone Number</Text>
         <TextInput
           style={styles.input}
-          placeholder="3051234567"
+          placeholder="(123) 456-7890"
           placeholderTextColor="#9CA3AF"
           value={formatPhoneNumber(formData.phoneNumber)}
           onChangeText={(value) => handleInputChange('phoneNumber', value)}
